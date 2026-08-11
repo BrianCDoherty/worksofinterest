@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pie Builder v2_0417</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f7f8fa; color: #222; }
+
+    /* ═══════════════════════════════════════
+       BUILDER VIEW
+    ═══════════════════════════════════════ */
+    #builder {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 52px 24px 80px;
+    }
+
+    .builder-inner {
+      width: 100%;
+      max-width: 540px;
+    }
+
+    .builder-header { margin-bottom: 32px; }
+
+    .builder-header h1 {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #111;
+      margin-bottom: 5px;
+    }
+
+    .builder-header p {
+      font-size: 13px;
+      color: #999;
+      line-height: 1.5;
+    }
+
+    .col-headers {
+      display: grid;
+      grid-template-columns: 16px 20px 1fr 88px 28px;
+      gap: 10px;
+      padding: 0 14px 6px;
+      font-size: 11px;
+      color: #bbb;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    #slice-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .slice-row {
+      display: grid;
+      grid-template-columns: 16px 20px 1fr 88px 28px;
+      align-items: center;
+      gap: 10px;
+      background: white;
+      border: 1px solid #e8e8e8;
+      border-radius: 9px;
+      padding: 10px 14px;
+      transition: border-color 0.15s, opacity 0.15s;
+      cursor: default;
+    }
+
+    .slice-row:focus-within { border-color: #aecfde; }
+
+    .drag-handle {
+      color: #ccc;
+      font-size: 15px;
+      cursor: grab;
+      line-height: 1;
+      user-select: none;
+      display: flex;
+      align-items: center;
+    }
+    .drag-handle:active { cursor: grabbing; }
+
+    .slice-row.is-dragging { opacity: 0.25; }
+
+    .color-swatch {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .slice-label {
+      border: none;
+      outline: none;
+      font-size: 14px;
+      color: #333;
+      background: transparent;
+      min-width: 0;
+      width: 100%;
+    }
+    .slice-label::placeholder { color: #ccc; }
+
+    .pct-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: #f5f5f5;
+      border-radius: 6px;
+      padding: 4px 8px;
+    }
+
+    .slice-pct {
+      width: 52px;
+      border: none;
+      outline: none;
+      font-size: 14px;
+      text-align: right;
+      color: #333;
+      background: transparent;
+      -moz-appearance: textfield;
+    }
+    .slice-pct::-webkit-outer-spin-button,
+    .slice-pct::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    .pct-sign { font-size: 13px; color: #aaa; }
+
+    .remove-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #d0d0d0;
+      font-size: 20px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: color 0.15s;
+    }
+    .remove-btn:hover { color: #aaa; }
+
+    .progress-area { margin: 16px 0; }
+
+    #progress-track {
+      height: 3px;
+      background: #ececec;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    #progress-fill {
+      height: 100%;
+      background: #5B9AB9;
+      border-radius: 2px;
+      transition: width 0.2s ease, background-color 0.2s ease;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #aaa;
+    }
+
+    #total-display {
+      font-size: 14px;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+
+    .total-ok    { color: #3aaa82; }
+    .total-over  { color: #d04040; }
+    .total-under { color: #aaa; }
+
+    #remaining-hint {
+      font-size: 12px;
+      color: #bbb;
+      margin-top: 3px;
+      text-align: right;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    #add-slice {
+      flex: 1;
+      padding: 11px;
+      border: 1.5px dashed #ddd;
+      border-radius: 9px;
+      background: transparent;
+      font-size: 13px;
+      color: #aaa;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    #add-slice:hover { border-color: #5B9AB9; color: #5B9AB9; }
+
+    #build-pie {
+      flex: 1;
+      padding: 11px 24px;
+      background: #5B9AB9;
+      color: white;
+      border: none;
+      border-radius: 9px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      letter-spacing: -0.01em;
+      transition: background 0.15s, opacity 0.15s, transform 0.1s;
+    }
+    #build-pie:hover:not(:disabled) { background: #4a87a5; }
+    #build-pie:active:not(:disabled) { transform: scale(0.98); }
+    #build-pie:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    #error-msg {
+      font-size: 12px;
+      color: #d04040;
+      margin-top: 10px;
+      text-align: center;
+      min-height: 18px;
+    }
+
+    /* ═══════════════════════════════════════
+       PIE VIEW
+    ═══════════════════════════════════════ */
+    #pie-view {
+      position: fixed;
+      inset: 0;
+      display: none;
+      background: white;
+    }
+
+    #pie-canvas-wrap {
+      width: 100%;
+      height: 100%;
+    }
+
+    #back-btn {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 20;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      color: #888;
+      background: rgba(255,255,255,0.88);
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    #back-btn:hover { color: #333; border-color: #bbb; }
+
+    #pie-controls {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-end;
+      z-index: 20;
+    }
+
+    .pie-btn {
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      color: #888;
+      background: rgba(255,255,255,0.88);
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    .pie-btn:hover { color: #333; border-color: #bbb; }
+
+    /* ═══════════════════════════════════════
+       MATERIAL PANEL
+    ═══════════════════════════════════════ */
+    #mat-panel {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 20;
+      width: 224px;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+      font-size: 11px;
+      overflow: hidden;
+      display: none;
+    }
+
+    #mat-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 12px;
+      cursor: pointer;
+      background: rgba(255,255,255,0.96);
+      border-bottom: 1px solid #eee;
+      user-select: none;
+    }
+    #mat-panel-header span { font-weight: 500; color: #444; letter-spacing: 0.03em; }
+    #mat-panel-chevron { color: #aaa; font-size: 10px; transition: transform 0.2s; }
+    #mat-panel.collapsed #mat-panel-chevron { transform: rotate(-90deg); }
+    #mat-panel.collapsed #mat-panel-body { display: none; }
+
+    #mat-panel-body {
+      padding: 10px 12px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      max-height: calc(100vh - 80px);
+      overflow-y: auto;
+    }
+
+    .mat-section-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #bbb;
+      margin-top: 4px;
+    }
+    .mat-section-label:first-child { margin-top: 0; }
+
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .slider-row-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .slider-label { color: #555; }
+    .slider-val { color: #999; font-variant-numeric: tabular-nums; min-width: 32px; text-align: right; }
+
+    .slider-row input[type=range] {
+      width: 100%;
+      height: 3px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: #e0e0e0;
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+    .slider-row input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #5B9AB9;
+      border: none;
+    }
+    .slider-row input[type=range]::-moz-range-thumb {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #5B9AB9;
+      border: none;
+    }
+
+    .preset-btn-row {
+      margin-top: 6px;
+      display: flex;
+      gap: 6px;
+    }
+    .preset-btn {
+      flex: 1;
+      padding: 6px;
+      background: none;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 10px;
+      color: #aaa;
+      cursor: pointer;
+      letter-spacing: 0.03em;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .preset-btn:hover { border-color: #5B9AB9; color: #5B9AB9; }
+
+    /* ── Save-name modal ── */
+    #save-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0,0,0,0.18);
+      align-items: center;
+      justify-content: center;
+    }
+    #save-modal.open { display: flex; }
+    #save-modal-box {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      padding: 24px 24px 20px;
+      width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    #save-modal-box h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111;
+      letter-spacing: -0.01em;
+    }
+    #save-modal-box p {
+      font-size: 12px;
+      color: #999;
+      margin-top: -8px;
+    }
+    #save-name-wrap {
+      display: flex;
+      align-items: center;
+      border: 1.5px solid #ddd;
+      border-radius: 7px;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+    #save-name-wrap:focus-within { border-color: #5B9AB9; }
+    #save-name-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      padding: 8px 10px;
+      font-size: 13px;
+      color: #222;
+      background: transparent;
+    }
+    #save-name-ext {
+      padding: 8px 10px 8px 0;
+      font-size: 13px;
+      color: #aaa;
+      user-select: none;
+    }
+    #save-modal-btns {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    #save-modal-cancel {
+      padding: 7px 16px;
+      border: 1px solid #ddd;
+      border-radius: 7px;
+      background: none;
+      font-size: 13px;
+      color: #888;
+      cursor: pointer;
+    }
+    #save-modal-cancel:hover { border-color: #bbb; color: #444; }
+    #save-modal-confirm {
+      padding: 7px 18px;
+      border: none;
+      border-radius: 7px;
+      background: #5B9AB9;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    #save-modal-confirm:hover { background: #4a87a5; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     BUILDER UI
+═══════════════════════════════════════════ -->
+<div id="builder">
+  <div class="builder-inner">
+
+    <div class="builder-header">
+      <h1>Pie Builder</h1>
+      <p>Define your slices — percentages must total 100%</p>
+    </div>
+
+    <div class="col-headers">
+      <span></span>
+      <span></span>
+      <span>Label</span>
+      <span style="text-align:right">Amount</span>
+      <span></span>
+    </div>
+
+    <div id="slice-rows"></div>
+
+    <div class="progress-area">
+      <div id="progress-track"><div id="progress-fill" style="width:0%"></div></div>
+      <div class="total-row">
+        <span>Total</span>
+        <span id="total-display" class="total-under">0%</span>
+      </div>
+      <div id="remaining-hint">&nbsp;</div>
+    </div>
+
+    <div class="btn-row">
+      <button id="add-slice">+ Add Slice</button>
+      <button id="build-pie" disabled>Build Pie →</button>
+    </div>
+    <div id="error-msg"></div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PIE VIEW
+═══════════════════════════════════════════ -->
+<div id="pie-view">
+  <div id="pie-canvas-wrap"></div>
+  <button id="back-btn">← edit</button>
+  <div id="pie-controls">
+    <button class="pie-btn" id="save-png">save as PNG</button>
+    <button class="pie-btn" id="save-html">save as HTML</button>
+    <button class="pie-btn" id="reset-view">reset view</button>
+  </div>
+
+  <div id="mat-panel">
+    <div id="mat-panel-header">
+      <span>Material</span>
+      <span id="mat-panel-chevron">▾</span>
+    </div>
+    <div id="mat-panel-body">
+      <!-- sliders injected by JS -->
+      <div class="preset-btn-row">
+        <button class="preset-btn" id="mat-save-btn">save .json</button>
+        <button class="preset-btn" id="mat-load-btn">load .json</button>
+      </div>
+      <input type="file" id="mat-load-input" accept=".json" style="display:none">
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls }  from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+// ═══════════════════════════════════════════════════════════
+//  M1 PIE PALETTE
+// ═══════════════════════════════════════════════════════════
+const PALETTE = [
+  '#6A7FAB', '#B8D3DF', '#D5DCEB', '#5B9AB9',
+  '#BBC1E0', '#7C88C7', '#8FB9CE', '#E0F0E5',
+  '#AFBEDC', '#59AFA0', '#D6D9EB', '#9AD3C9',
+];
+
+// ═══════════════════════════════════════════════════════════
+//  PIE GEOMETRY CONSTANTS
+// ═══════════════════════════════════════════════════════════
+const OUTER_R = 1.00;
+const INNER_R = 0.64;
+const HEIGHT  = 0.26;
+
+// ═══════════════════════════════════════════════════════════
+//  CAMERA DEFAULTS
+// ═══════════════════════════════════════════════════════════
+const CAM_POS_X = 0,   CAM_POS_Y = 2.7, CAM_POS_Z = 3.4;
+const CAM_TARGET_X = 0, CAM_TARGET_Y = 0, CAM_TARGET_Z = 0;
+const CAM_FOV = 40;
+
+// ═══════════════════════════════════════════════════════════
+//  RENDERER  — no shadow maps needed
+// ═══════════════════════════════════════════════════════════
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace    = THREE.SRGBColorSpace;
+renderer.toneMapping         = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xffffff);
+
+const camera = new THREE.PerspectiveCamera(CAM_FOV, 1, 0.1, 50);
+camera.position.set(CAM_POS_X, CAM_POS_Y, CAM_POS_Z);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.enableZoom    = true;
+controls.zoomSpeed     = 0.5;
+controls.minDistance   = 1.5;
+controls.maxDistance   = 12;
+controls.target.set(CAM_TARGET_X, CAM_TARGET_Y, CAM_TARGET_Z);
+controls.update();
+
+// ── Environment ──
+const pmrem  = new THREE.PMREMGenerator(renderer);
+const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environment = envTex;
+pmrem.dispose();
+
+// ── Lights ──
+const KEY_LIGHT_R = 2.5;
+let keyLightAngle  = 136;
+let keyLightHeight = 7.3;
+let shadowBlurVal  = 0.5;
+
+const keyLight = new THREE.DirectionalLight(0xffffff, 4.0);
+keyLight.position.set(
+  KEY_LIGHT_R * Math.cos(136 * Math.PI / 180),
+  7.3,
+  KEY_LIGHT_R * Math.sin(136 * Math.PI / 180)
+);
+scene.add(keyLight);
+
+const fillLight = new THREE.DirectionalLight(0xd6eef8, 1.3);
+fillLight.position.set(2.0, -0.5, 1.5);
+scene.add(fillLight);
+
+const rimLight = new THREE.PointLight(0xe8f4fa, 1.4, 8);
+rimLight.position.set(0, -1.8, -0.6);
+scene.add(rimLight);
+
+scene.add(new THREE.AmbientLight(0xffffff, 1.9));
+
+// ═══════════════════════════════════════════════════════════
+//  CANVAS SHADOW  — fake 2D ring shadow, no shadow maps
+//
+//  Draws a soft donut-ring gradient on a canvas texture and
+//  applies it to a plane just below the pie. The ring shape
+//  matches the donut geometry. Light angle/height control
+//  the shadow's cast offset; blur controls softness; depth
+//  controls opacity. Zero stripe artifacts.
+// ═══════════════════════════════════════════════════════════
+function makeShadowCanvas(blurVal, angleVal, heightVal) {
+  const SIZE = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = SIZE;
+  const ctx = canvas.getContext('2d');
+
+  // Canvas covers ±2.2 world units — gives padding around the 1.0-unit outer radius
+  const RANGE = 2.2;
+  const scale = SIZE / (RANGE * 2);   // pixels per world unit
+  const cx = SIZE / 2, cy = SIZE / 2;
+
+  // Shadow offset: cast opposite to the light direction
+  const rad = angleVal * Math.PI / 180;
+  const h   = Math.max(0.5, heightVal);
+  // Approximate offset of shadow center from donut center (world units)
+  const dist = KEY_LIGHT_R * 0.20 / h;
+  const ox   = -Math.cos(rad) * dist * scale;
+  const oy   = -Math.sin(rad) * dist * scale;
+
+  // Feather (softness): blur 0 → 6px, blur 20 → ~96px
+  const feather = Math.max(6, blurVal * 4.5);
+
+  const outerPx = OUTER_R * scale;
+  const innerPx = INNER_R * scale;
+
+  // 1. Draw soft outer disk (solid inside → fades at edge)
+  const g1 = ctx.createRadialGradient(
+    cx + ox, cy + oy, Math.max(0, outerPx - feather),
+    cx + ox, cy + oy, outerPx + feather
+  );
+  g1.addColorStop(0, 'rgba(0,0,0,0.92)');
+  g1.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g1;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  // 2. Punch out the donut hole with destination-out
+  ctx.globalCompositeOperation = 'destination-out';
+  const g2 = ctx.createRadialGradient(
+    cx + ox, cy + oy, Math.max(0, innerPx - feather * 0.6),
+    cx + ox, cy + oy, innerPx + feather * 0.5
+  );
+  g2.addColorStop(0, 'rgba(0,0,0,1)');
+  g2.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g2;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+  ctx.globalCompositeOperation = 'source-over';
+
+  return canvas;
+}
+
+// Shadow plane — sits just under the donut bottom face
+let shadowTex = new THREE.CanvasTexture(
+  makeShadowCanvas(shadowBlurVal, keyLightAngle, keyLightHeight)
+);
+const shadowMesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(4.4, 4.4),
+  new THREE.MeshBasicMaterial({
+    map:        shadowTex,
+    transparent: true,
+    opacity:    0.26,
+    depthWrite: false,
+  })
+);
+shadowMesh.rotation.x  = -Math.PI / 2;
+shadowMesh.position.y  = -(HEIGHT / 2) - 0.005;
+shadowMesh.renderOrder = -1;
+scene.add(shadowMesh);
+
+function updateShadowTex() {
+  const old = shadowTex;
+  shadowTex = new THREE.CanvasTexture(
+    makeShadowCanvas(shadowBlurVal, keyLightAngle, keyLightHeight)
+  );
+  shadowMesh.material.map = shadowTex;
+  shadowMesh.material.needsUpdate = true;
+  old.dispose();
+}
+
+// ── Render loop ──
+(function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+})();
+
+// ── Resize ──
+window.addEventListener('resize', () => {
+  if (document.getElementById('pie-view').style.display !== 'none') {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+//  DONUT GEOMETRY  — single continuous mesh, vertex colours
+// ═══════════════════════════════════════════════════════════
+const STEPS_PER_FULL = 256;
+
+function buildFullDonutGeo(slices) {
+  const pos = [], nor = [], col = [], idx = [];
+  let vi = 0;
+
+  function quad(v, n, c) {
+    v.forEach((p, i) => {
+      pos.push(p[0], p[1], p[2]);
+      nor.push(n[i][0], n[i][1], n[i][2]);
+      col.push(c.r, c.g, c.b);
+    });
+    idx.push(vi, vi+1, vi+2,  vi, vi+2, vi+3);
+    vi += 4;
+  }
+
+  const hH = HEIGHT / 2;
+  let angle = Math.PI / 2;
+
+  slices.forEach((s, si) => {
+    const span  = (s.pct / 100) * Math.PI * 2;
+    const steps = Math.max(2, Math.round(STEPS_PER_FULL * s.pct / 100));
+    const dA    = span / steps;
+    const c     = new THREE.Color(s.color || PALETTE[si % PALETTE.length]);
+
+    for (let i = 0; i < steps; i++) {
+      const a0 = angle + i * dA, a1 = a0 + dA;
+      const c0 = Math.cos(a0), s0 = Math.sin(a0);
+      const c1 = Math.cos(a1), s1 = Math.sin(a1);
+
+      quad(
+        [[OUTER_R*c0,-hH,OUTER_R*s0],[OUTER_R*c1,-hH,OUTER_R*s1],
+         [OUTER_R*c1, hH,OUTER_R*s1],[OUTER_R*c0, hH,OUTER_R*s0]],
+        [[c0,0,s0],[c1,0,s1],[c1,0,s1],[c0,0,s0]], c);
+      quad(
+        [[INNER_R*c0, hH,INNER_R*s0],[INNER_R*c1, hH,INNER_R*s1],
+         [INNER_R*c1,-hH,INNER_R*s1],[INNER_R*c0,-hH,INNER_R*s0]],
+        [[-c0,0,-s0],[-c1,0,-s1],[-c1,0,-s1],[-c0,0,-s0]], c);
+      quad(
+        [[INNER_R*c0,hH,INNER_R*s0],[OUTER_R*c0,hH,OUTER_R*s0],
+         [OUTER_R*c1,hH,OUTER_R*s1],[INNER_R*c1,hH,INNER_R*s1]],
+        [[0,1,0],[0,1,0],[0,1,0],[0,1,0]], c);
+      quad(
+        [[INNER_R*c1,-hH,INNER_R*s1],[OUTER_R*c1,-hH,OUTER_R*s1],
+         [OUTER_R*c0,-hH,OUTER_R*s0],[INNER_R*c0,-hH,INNER_R*s0]],
+        [[0,-1,0],[0,-1,0],[0,-1,0],[0,-1,0]], c);
+    }
+    angle += span;
+  });
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('normal',   new THREE.Float32BufferAttribute(nor, 3));
+  geo.setAttribute('color',    new THREE.Float32BufferAttribute(col, 3));
+  geo.setIndex(idx);
+  return geo;
+}
+
+function donutMat() {
+  return new THREE.MeshPhysicalMaterial({
+    vertexColors:        true,
+    transmission:        0.87,
+    roughness:           0.63,
+    metalness:           0.0,
+    ior:                 1.41,
+    thickness:           0.4,
+    transparent:         true,
+    side:                THREE.DoubleSide,
+    envMapIntensity:     0.05,
+    specularIntensity:   1.0,
+    specularColor:       new THREE.Color(0xaaaaaa),
+    attenuationColor:    new THREE.Color(0xb8d8e8),
+    attenuationDistance: 1.2,
+    clearcoat:           0,
+    clearcoatRoughness:  0.25,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PIE MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+let sliceMeshes   = [];
+let currentSlices = [];
+
+function buildPie(slices) {
+  sliceMeshes.forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose(); });
+  sliceMeshes = [];
+  currentSlices = slices;
+
+  const mesh = new THREE.Mesh(buildFullDonutGeo(slices), donutMat());
+  scene.add(mesh);
+  sliceMeshes.push(mesh);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  VIEW TRANSITIONS
+// ═══════════════════════════════════════════════════════════
+function showPieView(slices) {
+  buildPie(slices);
+
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+
+  camera.position.set(CAM_POS_X, CAM_POS_Y, CAM_POS_Z);
+  controls.target.set(CAM_TARGET_X, CAM_TARGET_Y, CAM_TARGET_Z);
+  controls.update();
+
+  const wrap = document.getElementById('pie-canvas-wrap');
+  if (!renderer.domElement.parentNode || renderer.domElement.parentNode !== wrap) {
+    wrap.appendChild(renderer.domElement);
+  }
+
+  document.getElementById('builder').style.display  = 'none';
+  document.getElementById('pie-view').style.display = 'block';
+}
+
+function showBuilderView() {
+  document.getElementById('pie-view').style.display = 'none';
+  document.getElementById('builder').style.display  = 'flex';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BUILDER UI LOGIC
+// ═══════════════════════════════════════════════════════════
+function getTotal() {
+  return Array.from(document.querySelectorAll('.slice-pct'))
+    .reduce((sum, el) => sum + (parseFloat(el.value) || 0), 0);
+}
+
+function updateTotal() {
+  const total   = getTotal();
+  const rounded = Math.round(total * 10) / 10;
+  const display = document.getElementById('total-display');
+  const fill    = document.getElementById('progress-fill');
+  const hint    = document.getElementById('remaining-hint');
+  const btn     = document.getElementById('build-pie');
+  const err     = document.getElementById('error-msg');
+
+  display.textContent = rounded + '%';
+  fill.style.width    = Math.min(total, 100) + '%';
+
+  if (Math.abs(total - 100) < 0.05) {
+    display.className    = 'total-ok';
+    fill.style.background = '#3aaa82';
+    hint.textContent     = 'Ready to build ✓';
+    btn.disabled         = false;
+    err.textContent      = '';
+  } else if (total > 100) {
+    display.className    = 'total-over';
+    fill.style.background = '#d04040';
+    hint.textContent     = `Over by ${(total - 100).toFixed(1)}%`;
+    btn.disabled         = true;
+  } else {
+    display.className    = 'total-under';
+    fill.style.background = '#5B9AB9';
+    const rem = (100 - total).toFixed(1);
+    hint.textContent     = rem > 0 ? `${rem}% remaining` : '';
+    btn.disabled         = true;
+  }
+}
+
+const rowList = document.getElementById('slice-rows');
+
+Sortable.create(rowList, {
+  handle:        '.drag-handle',
+  animation:     150,
+  forceFallback: true,
+  fallbackClass: 'is-dragging',
+  onEnd:         updateTotal,
+});
+
+function addRow(labelVal = '', pctVal = '', colorOverride = null) {
+  const row = document.createElement('div');
+  row.className = 'slice-row';
+
+  const swatchColor = colorOverride ||
+    PALETTE[[...rowList.querySelectorAll('.slice-row')].length % PALETTE.length];
+
+  row.innerHTML = `
+    <div class="drag-handle" title="Drag to reorder">⠿</div>
+    <div class="color-swatch" style="background:${swatchColor}" title="Click to change color"></div>
+    <input class="slice-label" type="text" placeholder="Label (optional)" value="${labelVal}" autocomplete="off">
+    <div class="pct-wrap">
+      <input class="slice-pct" type="number" min="0.1" max="100" step="0.1" placeholder="0" value="${pctVal}">
+      <span class="pct-sign">%</span>
+    </div>
+    <button class="remove-btn" title="Remove slice">×</button>
+  `;
+
+  row.querySelector('.slice-pct').addEventListener('input', updateTotal);
+  row.querySelector('.remove-btn').addEventListener('click', () => {
+    row.remove();
+    updateTotal();
+  });
+
+  rowList.appendChild(row);
+  updateTotal();
+
+  const target = labelVal ? row.querySelector('.slice-pct') : row.querySelector('.slice-label');
+  setTimeout(() => target.focus(), 0);
+}
+
+addRow('', '20');
+addRow('', '20');
+addRow('', '20');
+addRow('', '20');
+addRow('', '20');
+
+document.getElementById('add-slice').addEventListener('click', () => addRow());
+
+document.getElementById('build-pie').addEventListener('click', () => {
+  const rows   = document.querySelectorAll('.slice-row');
+  const slices = Array.from(rows).map(r => ({
+    label: r.querySelector('.slice-label').value.trim(),
+    pct:   parseFloat(r.querySelector('.slice-pct').value) || 0,
+    color: r.querySelector('.color-swatch').style.background,
+  })).filter(s => s.pct > 0);
+
+  if (!slices.length) {
+    document.getElementById('error-msg').textContent = 'Add at least one slice with a value.';
+    return;
+  }
+  showPieView(slices);
+});
+
+// ═══════════════════════════════════════════════════════════
+//  PIE VIEW BUTTONS
+// ═══════════════════════════════════════════════════════════
+document.getElementById('back-btn').addEventListener('click', showBuilderView);
+
+document.getElementById('reset-view').addEventListener('click', () => {
+  camera.position.set(CAM_POS_X, CAM_POS_Y, CAM_POS_Z);
+  controls.target.set(CAM_TARGET_X, CAM_TARGET_Y, CAM_TARGET_Z);
+  controls.update();
+});
+
+document.getElementById('save-png').addEventListener('click', () => {
+  renderer.render(scene, camera);
+  const link    = document.createElement('a');
+  link.download = `pie_${timestamp()}.png`;
+  link.href     = renderer.domElement.toDataURL('image/png');
+  link.click();
+});
+
+document.getElementById('save-html').addEventListener('click', () => {
+  function rgbToHex(str) {
+    const m = str.match(/\d+/g);
+    if (!m || m.length < 3) return str;
+    return '#' + m.slice(0, 3).map(n => parseInt(n).toString(16).padStart(2, '0')).join('');
+  }
+  const slicesJS = currentSlices.map((s, i) => {
+    const hex = s.color ? rgbToHex(s.color) : PALETTE[i % PALETTE.length];
+    return `  { pct: ${(s.pct / 100).toFixed(5)}, color: '${hex}' },${s.label ? '  // ' + s.label : ''}`;
+  }).join('\n');
+
+  const m      = sliceMeshes[0]?.material;
+  const ambNode = scene.children.find(c => c.isAmbientLight);
+  const opts = {
+    camPx: camera.position.x, camPy: camera.position.y, camPz: camera.position.z,
+    camTx: controls.target.x, camTy: controls.target.y, camTz: controls.target.z,
+    lightAngle:  keyLightAngle,
+    lightHeight: keyLightHeight,
+    shadowDepth: shadowMesh.material.opacity,
+    shadowBlur:  shadowBlurVal,
+    transmission:       m?.transmission       ?? 0.53,
+    thickness:          m?.thickness          ?? 0.65,
+    roughness:          m?.roughness          ?? 0.61,
+    ior:                m?.ior                ?? 1.49,
+    envMapIntensity:    m?.envMapIntensity     ?? 0.40,
+    clearcoat:          m?.clearcoat          ?? 0.00,
+    clearcoatRoughness: m?.clearcoatRoughness  ?? 0.25,
+    keyIntensity:     keyLight.intensity,
+    fillIntensity:    fillLight.intensity,
+    ambientIntensity: ambNode?.intensity ?? 1.45,
+  };
+
+  const name = `pie_${timestamp()}.html`;
+  const html = generateStandaloneHTML(slicesJS, name, opts);
+  const blob = new Blob([html], { type: 'text/html' });
+  const link = document.createElement('a');
+  link.download = name;
+  link.href     = URL.createObjectURL(blob);
+  link.click();
+  URL.revokeObjectURL(link.href);
+});
+
+function timestamp() {
+  return new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LIVE MATERIAL PANEL
+// ═══════════════════════════════════════════════════════════
+const MAT_PARAMS = [
+  { section: 'Transmission' },
+  { prop: 'transmission',       label: 'Transmission',   min: 0,   max: 1,   step: 0.01, val: 0.87 },
+  { prop: 'thickness',          label: 'Thickness',      min: 0.1, max: 2.0, step: 0.05, val: 0.4  },
+  { section: 'Surface' },
+  { prop: 'roughness',          label: 'Roughness',      min: 0,   max: 1,   step: 0.01, val: 0.63 },
+  { prop: 'ior',                label: 'IOR',            min: 1.0, max: 2.5, step: 0.01, val: 1.41 },
+  { prop: 'envMapIntensity',    label: 'Env Intensity',  min: 0,   max: 3.0, step: 0.05, val: 0.05 },
+  { section: 'Clearcoat' },
+  { prop: 'clearcoat',          label: 'Clearcoat',      min: 0,   max: 1,   step: 0.01, val: 0.00 },
+  { prop: 'clearcoatRoughness', label: 'Coat Roughness', min: 0,   max: 1,   step: 0.01, val: 0.25 },
+  { section: 'Lights' },
+  { light: 'key',               label: 'Key Light',      min: 0,   max: 5.0, step: 0.1,  val: 4.00 },
+  { light: 'fill',              label: 'Fill Light',     min: 0,   max: 5.0, step: 0.1,  val: 1.30 },
+  { light: 'ambient',           label: 'Ambient',        min: 0,   max: 3.0, step: 0.05, val: 1.90 },
+  { section: 'Shadow' },
+  { special: 'lightAngle',      label: 'Light Angle °',  min: 0,   max: 360, step: 1,    val: 136  },
+  { special: 'lightHeight',     label: 'Light Height',   min: 0.5, max: 8.0, step: 0.1,  val: 7.3  },
+  { special: 'shadowDepth',     label: 'Shadow Depth',   min: 0,   max: 0.6, step: 0.01, val: 0.26 },
+  { special: 'shadowBlur',      label: 'Shadow Blur',    min: 0,   max: 20,  step: 0.5,  val: 0.5  },
+];
+
+const panelEl    = document.getElementById('mat-panel');
+const panelBody  = document.getElementById('mat-panel-body');
+const saveBtn    = document.getElementById('mat-save-btn');
+const loadBtn    = document.getElementById('mat-load-btn');
+const loadInput  = document.getElementById('mat-load-input');
+// Anchor point for slider insertion — the preset button row
+const presetRow  = document.querySelector('.preset-btn-row');
+
+MAT_PARAMS.forEach(p => {
+  if (p.section) {
+    const lbl = document.createElement('div');
+    lbl.className = 'mat-section-label';
+    lbl.textContent = p.section;
+    panelBody.insertBefore(lbl, presetRow);
+    return;
+  }
+  const row = document.createElement('div');
+  row.className = 'slider-row';
+  row.innerHTML = `
+    <div class="slider-row-top">
+      <span class="slider-label">${p.label}</span>
+      <span class="slider-val">${p.val}</span>
+    </div>
+    <input type="range" min="${p.min}" max="${p.max}" step="${p.step}" value="${p.val}"
+           data-prop="${p.prop || ''}" data-light="${p.light || ''}" data-special="${p.special || ''}">
+  `;
+  const input = row.querySelector('input');
+  const valEl = row.querySelector('.slider-val');
+  input.addEventListener('input', () => {
+    const v = parseFloat(input.value);
+    valEl.textContent = v;
+    if (p.prop) {
+      sliceMeshes.forEach(m => { m.material[p.prop] = v; m.material.needsUpdate = true; });
+    } else if (p.light === 'key') {
+      keyLight.intensity = v;
+    } else if (p.light === 'fill') {
+      fillLight.intensity = v;
+    } else if (p.light === 'ambient') {
+      scene.children.filter(c => c.isAmbientLight).forEach(l => l.intensity = v);
+    } else if (p.special === 'lightAngle') {
+      keyLightAngle = v;
+      const rad = v * Math.PI / 180;
+      keyLight.position.x = KEY_LIGHT_R * Math.cos(rad);
+      keyLight.position.z = KEY_LIGHT_R * Math.sin(rad);
+      updateShadowTex();
+    } else if (p.special === 'lightHeight') {
+      keyLightHeight = v;
+      keyLight.position.y = v;
+      updateShadowTex();
+    } else if (p.special === 'shadowDepth') {
+      shadowMesh.material.opacity = v;
+    } else if (p.special === 'shadowBlur') {
+      shadowBlurVal = v;
+      updateShadowTex();
+    }
+  });
+  panelBody.insertBefore(row, presetRow);
+});
+
+document.getElementById('mat-panel-header').addEventListener('click', () => {
+  panelEl.classList.toggle('collapsed');
+});
+
+// ── Save preset — open naming modal ──
+const saveModal   = document.getElementById('save-modal');
+const saveNameInp = document.getElementById('save-name-input');
+const saveConfirm = document.getElementById('save-modal-confirm');
+const saveCancel  = document.getElementById('save-modal-cancel');
+
+function collectPresetVals() {
+  const vals = {};
+  panelBody.querySelectorAll('input[type=range]').forEach(inp => {
+    const key = inp.dataset.prop ||
+                (inp.dataset.light ? 'light_' + inp.dataset.light : null) ||
+                inp.dataset.special;
+    if (key) vals[key] = parseFloat(inp.value);
+  });
+  return vals;
+}
+
+function doSavePreset(name) {
+  const vals = collectPresetVals();
+  const blob = new Blob([JSON.stringify(vals, null, 2)], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.download = (name.trim() || 'pie_preset') + '.json';
+  link.href = URL.createObjectURL(blob);
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+saveBtn.addEventListener('click', () => {
+  saveNameInp.value = 'pie_preset';
+  saveModal.classList.add('open');
+  setTimeout(() => { saveNameInp.select(); saveNameInp.focus(); }, 50);
+});
+
+saveConfirm.addEventListener('click', () => {
+  doSavePreset(saveNameInp.value);
+  saveModal.classList.remove('open');
+  const orig = saveBtn.textContent;
+  saveBtn.textContent = 'saved ✓';
+  setTimeout(() => saveBtn.textContent = orig, 1500);
+});
+
+saveCancel.addEventListener('click', () => saveModal.classList.remove('open'));
+
+// Close on backdrop click
+saveModal.addEventListener('click', e => { if (e.target === saveModal) saveModal.classList.remove('open'); });
+
+// Confirm on Enter
+saveNameInp.addEventListener('keydown', e => { if (e.key === 'Enter') saveConfirm.click(); });
+
+// ── Load preset from .json file ──
+loadBtn.addEventListener('click', () => loadInput.click());
+
+loadInput.addEventListener('change', () => {
+  const file = loadInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    let vals;
+    try { vals = JSON.parse(e.target.result); }
+    catch { loadBtn.textContent = 'invalid json'; setTimeout(() => loadBtn.textContent = 'load .json', 1500); return; }
+
+    // Apply each value to its matching slider and fire the input event
+    panelBody.querySelectorAll('input[type=range]').forEach(inp => {
+      const key = inp.dataset.prop ||
+                  (inp.dataset.light ? 'light_' + inp.dataset.light : null) ||
+                  inp.dataset.special;
+      if (key && vals[key] !== undefined) {
+        inp.value = vals[key];
+        inp.dispatchEvent(new Event('input'));
+        // Update the displayed value label
+        const valEl = inp.closest('.slider-row')?.querySelector('.slider-val');
+        if (valEl) valEl.textContent = vals[key];
+      }
+    });
+    loadInput.value = '';  // reset so same file can be reloaded
+    const orig = loadBtn.textContent;
+    loadBtn.textContent = 'loaded ✓';
+    setTimeout(() => loadBtn.textContent = orig, 1500);
+  };
+  reader.readAsText(file);
+});
+
+const _pieViewEl = document.getElementById('pie-view');
+new MutationObserver(() => {
+  panelEl.style.display =
+    _pieViewEl.style.display !== 'none' && _pieViewEl.style.display !== '' ? 'block' : 'none';
+}).observe(_pieViewEl, { attributes: true, attributeFilter: ['style'] });
+
+// ═══════════════════════════════════════════════════════════
+//  STANDALONE HTML GENERATOR
+// ═══════════════════════════════════════════════════════════
+function generateStandaloneHTML(slicesBlock, title, opts = {}) {
+  const {
+    camPx = 0, camPy = 2.7, camPz = 3.4,
+    camTx = 0, camTy = 0,   camTz = 0,
+    lightAngle = 136, lightHeight = 7.3,
+    shadowDepth = 0.26, shadowBlur = 0.5,
+    transmission = 0.87, thickness = 0.4, roughness = 0.63, ior = 1.41,
+    envMapIntensity = 0.05, clearcoat = 0, clearcoatRoughness = 0.25,
+    keyIntensity = 4.0, fillIntensity = 1.3, ambientIntensity = 1.9,
+  } = opts;
+
+  const _bakeRad = lightAngle * Math.PI / 180;
+  const _kx  = (KEY_LIGHT_R * Math.cos(_bakeRad)).toFixed(4);
+  const _ky  = lightHeight.toFixed(2);
+  const _kz  = (KEY_LIGHT_R * Math.sin(_bakeRad)).toFixed(4);
+  const _shadow = shadowDepth.toFixed(3);
+  const _blur   = parseFloat(shadowBlur).toFixed(1);
+  const _angle  = parseFloat(lightAngle).toFixed(1);
+  const _height = parseFloat(lightHeight).toFixed(2);
+  const f = v => parseFloat(v).toFixed(4);
+  const _cpx = f(camPx), _cpy = f(camPy), _cpz = f(camPz);
+  const _ctx = f(camTx), _cty = f(camTy), _ctz = f(camTz);
+  const _tr = f(transmission), _th = f(thickness), _ro = f(roughness);
+  const _io = f(ior), _ev = f(envMapIntensity), _cc = f(clearcoat), _cr = f(clearcoatRoughness);
+  const _ki = f(keyIntensity), _fi = f(fillIntensity), _ai = f(ambientIntensity);
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #ffffff; overflow: hidden; font-family: system-ui, sans-serif; }
+    canvas { display: block; }
+    #controls {
+      position: fixed; top: 16px; right: 16px;
+      display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+    }
+    button {
+      font-size: 11px; letter-spacing: 0.04em; color: #888;
+      background: rgba(255,255,255,0.85); border: 1px solid #ddd;
+      border-radius: 6px; padding: 5px 10px; cursor: pointer;
+    }
+    button:hover { color: #333; border-color: #bbb; }
+  </style>
+</head>
+<body>
+<div id="controls">
+  <button id="btnExport">save as PNG</button>
+</div>
+<script type="importmap">
+{ "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
+<\/script>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const SLICES = [
+${slicesBlock}
+];
+
+const OUTER_R = 1.00, INNER_R = 0.64, HEIGHT = 0.26;
+const STEPS_PER_FULL = 256;
+const KEY_LIGHT_R = 2.5;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace    = THREE.SRGBColorSpace;
+renderer.toneMapping         = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+document.body.appendChild(renderer.domElement);
+
+const scene  = new THREE.Scene();
+scene.background = new THREE.Color(0xffffff);
+
+const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.1, 50);
+camera.position.set(${_cpx}, ${_cpy}, ${_cpz});
+camera.lookAt(${_ctx}, ${_cty}, ${_ctz});
+
+const pmrem  = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+pmrem.dispose();
+
+const kl = new THREE.DirectionalLight(0xffffff, ${_ki});
+kl.position.set(${_kx}, ${_ky}, ${_kz});
+scene.add(kl);
+const fl = new THREE.DirectionalLight(0xd6eef8, ${_fi});
+fl.position.set(2.0, -0.5, 1.5); scene.add(fl);
+const rl = new THREE.PointLight(0xe8f4fa, 1.4, 8);
+rl.position.set(0, -1.8, -0.6); scene.add(rl);
+scene.add(new THREE.AmbientLight(0xffffff, ${_ai}));
+
+// Canvas shadow — ring-shaped gradient, no shadow maps
+function makeShadowCanvas(blurVal, angleVal, heightVal) {
+  const SIZE = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = SIZE;
+  const ctx = canvas.getContext('2d');
+  const RANGE = 2.2;
+  const scale = SIZE / (RANGE * 2);
+  const cx = SIZE / 2, cy = SIZE / 2;
+  const rad = angleVal * Math.PI / 180;
+  const h = Math.max(0.5, heightVal);
+  const dist = KEY_LIGHT_R * 0.20 / h;
+  const ox = -Math.cos(rad) * dist * scale;
+  const oy = -Math.sin(rad) * dist * scale;
+  const feather = Math.max(6, blurVal * 4.5);
+  const outerPx = OUTER_R * scale;
+  const innerPx = INNER_R * scale;
+  const g1 = ctx.createRadialGradient(cx+ox, cy+oy, Math.max(0, outerPx - feather), cx+ox, cy+oy, outerPx + feather);
+  g1.addColorStop(0, 'rgba(0,0,0,0.92)');
+  g1.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g1;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+  ctx.globalCompositeOperation = 'destination-out';
+  const g2 = ctx.createRadialGradient(cx+ox, cy+oy, Math.max(0, innerPx - feather * 0.6), cx+ox, cy+oy, innerPx + feather * 0.5);
+  g2.addColorStop(0, 'rgba(0,0,0,1)');
+  g2.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g2;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+  ctx.globalCompositeOperation = 'source-over';
+  return canvas;
+}
+
+const shadowTex  = new THREE.CanvasTexture(makeShadowCanvas(${_blur}, ${_angle}, ${_height}));
+const shadowMesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(4.4, 4.4),
+  new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, opacity: ${_shadow}, depthWrite: false })
+);
+shadowMesh.rotation.x  = -Math.PI / 2;
+shadowMesh.position.y  = -(0.26 / 2) - 0.005;
+shadowMesh.renderOrder = -1;
+scene.add(shadowMesh);
+
+function buildFullDonutGeo(slices) {
+  const pos=[], nor=[], col=[], idx=[]; let vi=0;
+  function quad(v,n,c) {
+    v.forEach((p,i)=>{ pos.push(p[0],p[1],p[2]); nor.push(n[i][0],n[i][1],n[i][2]); col.push(c.r,c.g,c.b); });
+    idx.push(vi,vi+1,vi+2, vi,vi+2,vi+3); vi+=4;
+  }
+  const hH=HEIGHT/2; let angle=Math.PI/2;
+  slices.forEach(s=>{
+    const span=s.pct*Math.PI*2, steps=Math.max(2,Math.round(STEPS_PER_FULL*s.pct));
+    const dA=span/steps, c=new THREE.Color(s.color);
+    for(let i=0;i<steps;i++){
+      const a0=angle+i*dA,a1=a0+dA,c0=Math.cos(a0),s0=Math.sin(a0),c1=Math.cos(a1),s1=Math.sin(a1);
+      quad([[OUTER_R*c0,-hH,OUTER_R*s0],[OUTER_R*c1,-hH,OUTER_R*s1],[OUTER_R*c1,hH,OUTER_R*s1],[OUTER_R*c0,hH,OUTER_R*s0]],[[c0,0,s0],[c1,0,s1],[c1,0,s1],[c0,0,s0]],c);
+      quad([[INNER_R*c0,hH,INNER_R*s0],[INNER_R*c1,hH,INNER_R*s1],[INNER_R*c1,-hH,INNER_R*s1],[INNER_R*c0,-hH,INNER_R*s0]],[[-c0,0,-s0],[-c1,0,-s1],[-c1,0,-s1],[-c0,0,-s0]],c);
+      quad([[INNER_R*c0,hH,INNER_R*s0],[OUTER_R*c0,hH,OUTER_R*s0],[OUTER_R*c1,hH,OUTER_R*s1],[INNER_R*c1,hH,INNER_R*s1]],[[0,1,0],[0,1,0],[0,1,0],[0,1,0]],c);
+      quad([[INNER_R*c1,-hH,INNER_R*s1],[OUTER_R*c1,-hH,OUTER_R*s1],[OUTER_R*c0,-hH,OUTER_R*s0],[INNER_R*c0,-hH,INNER_R*s0]],[[0,-1,0],[0,-1,0],[0,-1,0],[0,-1,0]],c);
+    }
+    angle+=span;
+  });
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  geo.setAttribute('normal',  new THREE.Float32BufferAttribute(nor,3));
+  geo.setAttribute('color',   new THREE.Float32BufferAttribute(col,3));
+  geo.setIndex(idx); return geo;
+}
+
+const mesh = new THREE.Mesh(buildFullDonutGeo(SLICES), new THREE.MeshPhysicalMaterial({
+  vertexColors: true, transmission: ${_tr}, roughness: ${_ro}, metalness: 0.0,
+  ior: ${_io}, thickness: ${_th}, transparent: true, side: THREE.DoubleSide,
+  envMapIntensity: ${_ev}, specularIntensity: 1.0, specularColor: new THREE.Color(0xaaaaaa),
+  attenuationColor: new THREE.Color(0xb8d8e8), attenuationDistance: 1.2,
+  clearcoat: ${_cc}, clearcoatRoughness: ${_cr},
+}));
+scene.add(mesh);
+
+renderer.render(scene, camera);
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.render(scene, camera);
+});
+
+document.getElementById('btnExport').addEventListener('click', () => {
+  renderer.render(scene, camera);
+  const link = document.createElement('a');
+  link.download = '${title.replace('.html', '')}.png';
+  link.href = renderer.domElement.toDataURL('image/png');
+  link.click();
+});
+<\/script>
+</body>
+</html>`;
+}
+</script>
+
+<!-- ── Save-name modal ── -->
+<div id="save-modal">
+  <div id="save-modal-box">
+    <h3>Save preset</h3>
+    <p>Name your settings file</p>
+    <div id="save-name-wrap">
+      <input id="save-name-input" type="text" spellcheck="false" placeholder="my_preset">
+      <span id="save-name-ext">.json</span>
+    </div>
+    <div id="save-modal-btns">
+      <button id="save-modal-cancel">Cancel</button>
+      <button id="save-modal-confirm">Save</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Triadic Resonance v2</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --anthropic-dark: #141413;
+            --anthropic-light: #faf9f5;
+            --anthropic-mid-gray: #b0aea5;
+            --anthropic-light-gray: #e8e6dc;
+            --anthropic-orange: #d97757;
+            --anthropic-blue: #6a9bcc;
+            --anthropic-green: #788c5d;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--anthropic-light) 0%, #f5f3ee 100%);
+            min-height: 100vh;
+            color: var(--anthropic-dark);
+        }
+        .container { display: flex; min-height: 100vh; padding: 20px; gap: 20px; }
+        .sidebar {
+            width: 296px; flex-shrink: 0;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            padding: 22px; border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(20,20,19,0.1);
+            overflow-y: auto; overflow-x: hidden;
+            max-height: calc(100vh - 40px);
+        }
+        .sidebar h1 { font-family: 'Lora', serif; font-size: 21px; font-weight: 500; color: var(--anthropic-dark); margin-bottom: 4px; }
+        .sidebar .subtitle { color: var(--anthropic-mid-gray); font-size: 11.5px; margin-bottom: 26px; line-height: 1.5; }
+        .version-tag { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; color: var(--anthropic-orange); background: rgba(217,119,87,0.1); border-radius: 4px; padding: 2px 6px; margin-bottom: 10px; }
+        .control-section { margin-bottom: 24px; }
+        .control-section h3 { font-size: 11px; font-weight: 600; color: var(--anthropic-dark); margin-bottom: 13px; display: flex; align-items: center; gap: 7px; text-transform: uppercase; letter-spacing: 0.07em; }
+        .control-section h3::before { content: '•'; color: var(--anthropic-orange); font-weight: bold; font-size: 14px; }
+        .seed-input { width: 100%; background: var(--anthropic-light); padding: 9px 12px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 14px; margin-bottom: 9px; border: 1px solid var(--anthropic-light-gray); text-align: center; }
+        .seed-input:focus { outline: none; border-color: var(--anthropic-orange); box-shadow: 0 0 0 2px rgba(217,119,87,0.1); background: white; }
+        .seed-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 7px; }
+        .control-group { margin-bottom: 14px; }
+        .control-group label { display: block; font-size: 11.5px; font-weight: 500; color: var(--anthropic-dark); margin-bottom: 5px; }
+        .slider-container { display: flex; align-items: center; gap: 9px; }
+        .slider-container input[type="range"] { flex: 1; height: 3px; background: var(--anthropic-light-gray); border-radius: 2px; outline: none; -webkit-appearance: none; }
+        .slider-container input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--anthropic-orange); border-radius: 50%; cursor: pointer; transition: all 0.2s ease; }
+        .slider-container input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); background: #c86641; }
+        .slider-container input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; background: var(--anthropic-orange); border-radius: 50%; border: none; cursor: pointer; }
+        .value-display { font-family: 'Courier New', monospace; font-size: 11px; color: var(--anthropic-mid-gray); min-width: 36px; text-align: right; }
+        .color-row { margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+        .color-row label { font-size: 11.5px; color: #888; }
+        .color-swatch-group { display: flex; align-items: center; gap: 7px; }
+        .color-swatch-group input[type="color"] { width: 26px; height: 26px; border: 1px solid var(--anthropic-light-gray); border-radius: 5px; cursor: pointer; background: none; padding: 0; }
+        .color-hex { font-family: 'Courier New', monospace; font-size: 10px; color: var(--anthropic-mid-gray); }
+        .button { background: var(--anthropic-orange); color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; width: 100%; margin-bottom: 7px; font-family: 'Poppins', sans-serif; }
+        .button:hover { background: #c86641; transform: translateY(-1px); }
+        .button:active { transform: translateY(0); }
+        .button.secondary { background: var(--anthropic-blue); margin-bottom: 0; }
+        .button.secondary:hover { background: #5a8bb8; }
+        .button.tertiary { background: var(--anthropic-green); }
+        .button.tertiary:hover { background: #6b7b52; }
+        .button-row { display: flex; gap: 7px; }
+        .button-row .button { flex: 1; }
+        .divider { height: 1px; background: var(--anthropic-light-gray); margin: 0 0 22px 0; }
+        .canvas-area { flex: 1; display: flex; align-items: center; justify-content: center; min-width: 0; }
+        #canvas-container { width: 100%; max-width: 900px; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 60px rgba(5,14,26,0.45); background: #050e1a; }
+        #canvas-container canvas { display: block; width: 100% !important; height: auto !important; }
+        .loading { display: flex; align-items: center; justify-content: center; height: 280px; font-size: 15px; color: #4a8a9a; font-family: 'Poppins', sans-serif; }
+        @media (max-width: 700px) { .container { flex-direction: column; } .sidebar { width: 100%; max-height: none; } }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="sidebar">
+        <div class="version-tag">V2 — FLOWING</div>
+        <h1>Triadic Resonance</h1>
+        <div class="subtitle">Triads of circle, triangle, and square drift through oceanic depth — each bond drawing itself as it passes.</div>
+
+        <!-- Seed -->
+        <div class="control-section">
+            <h3>Seed</h3>
+            <input type="number" id="seed-input" class="seed-input" value="42" onchange="updateSeed()">
+            <div class="seed-controls">
+                <button class="button secondary" onclick="previousSeed()">← Prev</button>
+                <button class="button secondary" onclick="nextSeed()">Next →</button>
+            </div>
+            <button class="button tertiary" style="margin-bottom:0" onclick="randomSeedAndUpdate()">↻ Random</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Parameters -->
+        <div class="control-section">
+            <h3>Parameters</h3>
+
+            <div class="control-group">
+                <label>Triad Count</label>
+                <div class="slider-container">
+                    <input type="range" id="triadCount" min="15" max="130" step="5" value="70" oninput="updateParam('triadCount', this.value, true)">
+                    <span class="value-display" id="triadCount-value">70</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Spread</label>
+                <div class="slider-container">
+                    <input type="range" id="spread" min="25" max="200" step="5" value="85" oninput="updateParam('spread', this.value, true)">
+                    <span class="value-display" id="spread-value">85</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Curvature</label>
+                <div class="slider-container">
+                    <input type="range" id="curvature" min="0" max="1.6" step="0.05" value="0.65" oninput="updateParam('curvature', this.value, false)">
+                    <span class="value-display" id="curvature-value">0.65</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Drift Speed</label>
+                <div class="slider-container">
+                    <input type="range" id="driftSpeed" min="0.1" max="3.0" step="0.05" value="1.0" oninput="updateParam('driftSpeed', this.value, false)">
+                    <span class="value-display" id="driftSpeed-value">1.00</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Draw Speed</label>
+                <div class="slider-container">
+                    <input type="range" id="drawSpeed" min="0.2" max="4.0" step="0.1" value="1.0" oninput="updateParam('drawSpeed', this.value, false)">
+                    <span class="value-display" id="drawSpeed-value">1.0</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Breathe</label>
+                <div class="slider-container">
+                    <input type="range" id="breatheSpeed" min="0" max="3.0" step="0.05" value="0.55" oninput="updateParam('breatheSpeed', this.value, false)">
+                    <span class="value-display" id="breatheSpeed-value">0.55</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Particle Size</label>
+                <div class="slider-container">
+                    <input type="range" id="sizeScale" min="0.35" max="2.5" step="0.05" value="1.0" oninput="updateParam('sizeScale', this.value, false)">
+                    <span class="value-display" id="sizeScale-value">1.00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Background Colors -->
+        <div class="control-section">
+            <h3>Background</h3>
+            <div class="color-row">
+                <label>Top</label>
+                <div class="color-swatch-group">
+                    <input type="color" id="bgTop" value="#050e1a" onchange="updateBgColor('bgTop', this.value)">
+                    <span class="color-hex" id="bgTop-value">#050e1a</span>
+                </div>
+            </div>
+            <div class="color-row">
+                <label>Bottom</label>
+                <div class="color-swatch-group">
+                    <input type="color" id="bgBottom" value="#072f38" onchange="updateBgColor('bgBottom', this.value)">
+                    <span class="color-hex" id="bgBottom-value">#072f38</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Line Colors -->
+        <div class="control-section">
+            <h3>Lines</h3>
+            <div class="color-row">
+                <label>Glow</label>
+                <div class="color-swatch-group">
+                    <input type="color" id="lineGlow" value="#4ec8eb" onchange="updateLineColor('lineGlow', this.value)">
+                    <span class="color-hex" id="lineGlow-value">#4ec8eb</span>
+                </div>
+            </div>
+            <div class="color-row">
+                <label>Core</label>
+                <div class="color-swatch-group">
+                    <input type="color" id="lineCore" value="#e4f8ff" onchange="updateLineColor('lineCore', this.value)">
+                    <span class="color-hex" id="lineCore-value">#e4f8ff</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Particle Colors -->
+        <div class="control-section">
+            <h3>Particles</h3>
+            <div class="color-row">
+                <label>○  Circle</label>
+                <div class="color-swatch-group">
+                    <input type="color" id="colorCircle" value="#d2eef8" onchange="updateParticleColor('colorCircle', this.value)">
+                    <span class="color-hex" id="colorCircle-value">#d2eef8</span>
+                </div>
+            </div>
+            <div class="color-row">
+                <label>△  Triangle</label>
+                <div class="color-swatch-group">
+                    <input type="color" id="colorTriangle" value="#4fc8dd" onchange="updateParticleColor('colorTriangle', this.value)">
+                    <span class="color-hex" id="colorTriangle-value">#4fc8dd</span>
+                </div>
+            </div>
+            <div class="color-row">
+                <label>□  Square</label>
+                <div class="color-swatch-group">
+                    <input type="color" id="colorSquare" value="#f0c264" onchange="updateParticleColor('colorSquare', this.value)">
+                    <span class="color-hex" id="colorSquare-value">#f0c264</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Actions -->
+        <div class="control-section" style="margin-bottom:0">
+            <h3>Actions</h3>
+            <div class="button-row">
+                <button class="button secondary" onclick="resetParameters()">Reset</button>
+                <button class="button" onclick="downloadArt()">↓ PNG</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Canvas -->
+    <div class="canvas-area">
+        <div id="canvas-container">
+            <div class="loading">Initializing Triadic Resonance v2…</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// PARAMETERS
+// ═══════════════════════════════════════════════════════════════
+let params = {
+    seed:         42,
+    triadCount:   70,
+    spread:       85,
+    curvature:    0.65,
+    driftSpeed:   1.0,
+    drawSpeed:    1.0,
+    breatheSpeed: 0.55,
+    sizeScale:    1.0,
+    // Colors
+    bgTop:         '#050e1a',
+    bgBottom:      '#072f38',
+    lineGlow:      '#4ec8eb',
+    lineCore:      '#e4f8ff',
+    colorCircle:   '#d2eef8',
+    colorTriangle: '#4fc8dd',
+    colorSquare:   '#f0c264'
+};
+let defaultParams = { ...params };
+
+// ═══════════════════════════════════════════════════════════════
+// COLOR CACHE — parsed {r,g,b} objects, refreshed on any color change
+// ═══════════════════════════════════════════════════════════════
+let cc = {};
+
+function hexToRgb(hex) {
+    return {
+        r: parseInt(hex.slice(1,3), 16),
+        g: parseInt(hex.slice(3,5), 16),
+        b: parseInt(hex.slice(5,7), 16)
+    };
+}
+
+function refreshColorCache() {
+    cc.circle   = hexToRgb(params.colorCircle);
+    cc.triangle = hexToRgb(params.colorTriangle);
+    cc.square   = hexToRgb(params.colorSquare);
+    cc.lineGlow = hexToRgb(params.lineGlow);
+    cc.lineCore = hexToRgb(params.lineCore);
+    cc.bgTop    = hexToRgb(params.bgTop);
+    cc.bgBottom = hexToRgb(params.bgBottom);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let triads     = [];
+let bgBuffer   = null;
+let framePhase = 0;
+
+// ═══════════════════════════════════════════════════════════════
+// BACKGROUND RENDERING
+// ═══════════════════════════════════════════════════════════════
+function renderBackground() {
+    bgBuffer.noStroke();
+    let steps = 120;
+    let h = bgBuffer.height / steps;
+    let t0 = cc.bgTop, t1 = cc.bgBottom;
+    for (let i = 0; i < steps; i++) {
+        let t  = i / (steps - 1);
+        let r  = t0.r + (t1.r - t0.r) * t;
+        let g  = t0.g + (t1.g - t0.g) * t;
+        let b  = t0.b + (t1.b - t0.b) * t;
+        bgBuffer.fill(r, g, b);
+        bgBuffer.rect(0, i * h, bgBuffer.width, h + 1);
+    }
+    // Subtle depth blobs — murk and shadow using Math.random for texture variety
+    for (let i = 0; i < 380; i++) {
+        let x = Math.random() * bgBuffer.width;
+        let y = Math.random() * bgBuffer.height;
+        let r = 10 + Math.random() * 105;
+        bgBuffer.fill(2, 8, 18, 4 + Math.random() * 11);
+        bgBuffer.ellipse(x, y, r * 2, r * 2);
+    }
+    // Bioluminescent micro-flecks
+    for (let i = 0; i < 260; i++) {
+        let x = Math.random() * bgBuffer.width;
+        let y = Math.random() * bgBuffer.height;
+        let r = 0.5 + Math.random() * 1.8;
+        // Tint flecks toward the line glow color
+        let lg = cc.lineGlow;
+        bgBuffer.fill(lg.r * 0.5 + 40, lg.g * 0.7 + 30, lg.b * 0.8 + 20, 6 + Math.random() * 18);
+        bgBuffer.ellipse(x, y, r * 2, r * 2);
+    }
+}
+
+function rebuildBackground() {
+    if (bgBuffer) bgBuffer.remove();
+    bgBuffer = createGraphics(width, height);
+    renderBackground();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SYSTEM INITIALIZATION
+// ═══════════════════════════════════════════════════════════════
+function initializeSystem() {
+    randomSeed(params.seed);
+    noiseSeed(params.seed);
+    refreshColorCache();
+
+    rebuildBackground();
+
+    triads = [];
+    framePhase = 0;
+
+    // Initial population — triads spread across the full canvas
+    // so the composition is immediately populated, not empty on load.
+    for (let i = 0; i < params.triadCount; i++) {
+        triads.push(new Triad(true));
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// P5 SETUP & DRAW
+// ═══════════════════════════════════════════════════════════════
+function setup() {
+    let canvas = createCanvas(1200, 1200);
+    canvas.parent('canvas-container');
+    strokeCap(ROUND);
+    strokeJoin(ROUND);
+    document.querySelector('.loading').style.display = 'none';
+    initializeSystem();
+}
+
+function draw() {
+    image(bgBuffer, 0, 0);
+    framePhase++;
+
+    for (let t of triads) {
+        t.update();
+        t.render();
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TRIAD CLASS
+// ═══════════════════════════════════════════════════════════════
+class Triad {
+
+    constructor(isInitial = false) {
+        // Depth creates layering: deep triads (low depth) are smaller, dimmer, slower
+        this.depth       = random(0.28, 1.0);
+        this.globalAlpha = this.depth * random(0.60, 1.0);
+
+        // Horizontal drift: base speed, scaled each frame by params.driftSpeed
+        // Deeper triads drift a touch slower (deep ocean current logic)
+        this.baseVx  = random(0.18, 0.54) * lerp(0.65, 1.0, this.depth);
+
+        // Gentle vertical oscillation
+        this.vyAmp   = random(0, 0.20);
+        this.vyFreq  = random(0.0030, 0.0090);
+        this.vyPhase = random(TWO_PI);
+
+        // Slow rotation of the triad formation (not the shapes themselves)
+        this.rotAngle = random(TWO_PI);
+        this.rotSpeed = random(-0.00065, 0.00065);
+
+        // Per-shape initial orientation (fixed, gives visual variety)
+        this.shapeAngles = [random(TWO_PI), random(TWO_PI), random(TWO_PI)];
+
+        if (isInitial) {
+            // Spread across canvas so it starts populated
+            this.baseX = random(-params.spread * 0.6, width + params.spread * 0.6);
+            // Map x position to draw progress so the right side looks more "mature"
+            let xFrac = constrain(map(this.baseX, 0, width, 0, 1.15), 0, 1);
+            this.drawProgress = xFrac;
+            this.isActive     = true;
+            // For already-completed triads, give them breathing time credit
+            this.localFrame        = this.drawProgress >= 1.0 ? 300 : 0;
+            this.completedLF       = this.drawProgress >= 1.0 ? 0   : -1;
+        } else {
+            // Enters from off left
+            this.baseX     = random(-params.spread * 2.8, -params.spread * 0.7);
+            this.drawProgress  = 0;
+            this.isActive      = false;
+            this.localFrame    = 0;
+            this.completedLF   = -1;
+        }
+
+        this.baseY = random(height * 0.04, height * 0.96);
+
+        // Geometry arrays populated by generateGeometry
+        this.particles = [];
+        this.cpData    = [];
+        this.generateGeometry();
+    }
+
+    // Generate particle offsets and bezier control data using p5 seeded random
+    generateGeometry() {
+        let sp    = params.spread;
+        let types = ['circle', 'triangle', 'square'];
+
+        // Fisher-Yates shuffle (seeded)
+        for (let i = 2; i > 0; i--) {
+            let j = floor(random(i + 1));
+            let tmp = types[i]; types[i] = types[j]; types[j] = tmp;
+        }
+
+        // Roughly equilateral with organic variation
+        let baseAngle = random(TWO_PI);
+        this.particles = [];
+        for (let i = 0; i < 3; i++) {
+            let a = baseAngle + i * TWO_PI / 3 + random(-PI / 5.5, PI / 5.5);
+            let r = random(sp * 0.36, sp * 0.97);
+            this.particles.push({
+                offsetX:  cos(a) * r,
+                offsetY:  sin(a) * r,
+                type:     types[i],
+                baseSize: random(5, 17) * this.depth
+            });
+        }
+
+        // Bezier control point data per connection
+        this.cpData = [];
+        for (let i = 0; i < 3; i++) {
+            this.cpData.push({
+                rawOffset: random(-68, 68),
+                phase:     random(TWO_PI),
+                speed:     random(0.62, 1.42)
+            });
+        }
+    }
+
+    // Reset using Math.random (not p5 seeded) so it doesn't disrupt the seeded sequence
+    resetToLeft() {
+        this.baseX        = -(params.spread * 1.4 + Math.random() * params.spread);
+        this.baseY        = Math.random() * height * 0.92 + height * 0.04;
+        this.baseVx       = 0.18 + Math.random() * 0.36;
+        this.vyAmp        = Math.random() * 0.20;
+        this.vyFreq       = 0.003 + Math.random() * 0.006;
+        this.vyPhase      = Math.random() * Math.PI * 2;
+        this.rotAngle     = Math.random() * Math.PI * 2;
+        this.rotSpeed     = (Math.random() - 0.5) * 0.0013;
+        this.shapeAngles  = [Math.random() * Math.PI * 2, Math.random() * Math.PI * 2, Math.random() * Math.PI * 2];
+        this.depth        = 0.28 + Math.random() * 0.72;
+        this.globalAlpha  = this.depth * (0.60 + Math.random() * 0.40);
+        this.drawProgress = 0;
+        this.isActive     = false;
+        this.localFrame   = 0;
+        this.completedLF  = -1;
+        this.regenerateMath();
+    }
+
+    // Re-generate geometry with Math.random for post-wrap variety
+    regenerateMath() {
+        let sp    = params.spread;
+        let types = ['circle', 'triangle', 'square'];
+        for (let i = 2; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            let tmp = types[i]; types[i] = types[j]; types[j] = tmp;
+        }
+        let baseAngle = Math.random() * Math.PI * 2;
+        this.particles = [];
+        for (let i = 0; i < 3; i++) {
+            let a = baseAngle + i * Math.PI * 2 / 3 + (Math.random() - 0.5) * Math.PI / 2.8;
+            let r = (0.36 + Math.random() * 0.61) * sp;
+            this.particles.push({
+                offsetX:  Math.cos(a) * r,
+                offsetY:  Math.sin(a) * r,
+                type:     types[i],
+                baseSize: (5 + Math.random() * 12) * this.depth
+            });
+        }
+        this.cpData = [];
+        for (let i = 0; i < 3; i++) {
+            this.cpData.push({
+                rawOffset: (Math.random() - 0.5) * 136,
+                phase:     Math.random() * Math.PI * 2,
+                speed:     0.62 + Math.random() * 0.80
+            });
+        }
+    }
+
+    // ─── Update ──────────────────────────────────────────────
+    update() {
+        // Drift rightward; params.driftSpeed is a live multiplier
+        this.baseX += this.baseVx * params.driftSpeed;
+
+        // Gentle sinusoidal vertical oscillation
+        this.baseY += Math.sin(framePhase * this.vyFreq + this.vyPhase) * this.vyAmp;
+
+        // Rotate the formation slowly
+        this.rotAngle += this.rotSpeed;
+
+        // Activate drawing when the triad enters the "draw zone"
+        if (!this.isActive && this.baseX > -params.spread * 0.25) {
+            this.isActive = true;
+        }
+
+        if (this.isActive) {
+            this.localFrame++;
+            if (this.drawProgress < 1.0) {
+                this.drawProgress = Math.min(1.0, this.drawProgress + 0.0088 * params.drawSpeed);
+            }
+            // Record the frame drawing completed — used for breathing ease-in
+            if (this.drawProgress >= 1.0 && this.completedLF < 0) {
+                this.completedLF = this.localFrame;
+            }
+        }
+
+        // Wrap back when fully off-screen right
+        if (this.baseX > width + params.spread * 2.0) {
+            this.resetToLeft();
+        }
+    }
+
+    // ─── Absolute position of a particle (applies formation rotation) ─────
+    absPos(p) {
+        let c = Math.cos(this.rotAngle);
+        let s = Math.sin(this.rotAngle);
+        return {
+            x: this.baseX + p.offsetX * c - p.offsetY * s,
+            y: this.baseY + p.offsetX * s + p.offsetY * c
+        };
+    }
+
+    // ─── Bezier control point with eased breathing ───────────────────────
+    // KEY FIX: breathing amplitude eases in smoothly over 80 frames
+    // after drawing completes, eliminating the control-point "snap".
+    controlPoint(pos1, pos2, cpd) {
+        let mx  = (pos1.x + pos2.x) * 0.5;
+        let my  = (pos1.y + pos2.y) * 0.5;
+        let dx  = pos2.x - pos1.x;
+        let dy  = pos2.y - pos1.y;
+        let len = Math.sqrt(dx * dx + dy * dy) || 1;
+        let nx  = -dy / len;  // unit perpendicular
+        let ny  =  dx / len;
+
+        // Breathing with smooth ease-in — no more snapping
+        let breathAmp = 0;
+        if (this.completedLF >= 0) {
+            let elapsed = this.localFrame - this.completedLF;
+            let blend   = Math.min(elapsed / 80, 1.0);
+            blend = blend * blend * (3.0 - 2.0 * blend); // smoothstep
+            breathAmp = Math.sin(
+                this.localFrame * 0.015 * cpd.speed * params.breatheSpeed + cpd.phase
+            ) * 17 * blend;
+        }
+
+        let totalOffset = cpd.rawOffset * params.curvature + breathAmp;
+        return { x: mx + nx * totalOffset, y: my + ny * totalOffset };
+    }
+
+    // ─── Draw quadratic bezier from pos1→pos2 via cp, fraction 0..1 ─────
+    drawBezier(pos1, pos2, cp, t, alpha) {
+        if (t <= 0.001) return;
+        t = Math.min(t, 1.0);
+
+        let steps   = 28;
+        let maxStep = Math.floor(steps * t);
+        if (maxStep < 1) return;
+
+        let pts = [];
+        for (let s = 0; s <= maxStep; s++) {
+            let st  = s / steps;
+            let inv = 1 - st;
+            pts.push({
+                x: inv*inv*pos1.x + 2*inv*st*cp.x + st*st*pos2.x,
+                y: inv*inv*pos1.y + 2*inv*st*cp.y + st*st*pos2.y
+            });
+        }
+        if (pts.length < 2) return;
+
+        let lg = cc.lineGlow;
+        let lc = cc.lineCore;
+        noFill();
+        strokeCap(ROUND);
+
+        // Pass 1 — wide outer glow
+        stroke(lg.r, lg.g, lg.b, 14 * alpha);
+        strokeWeight(6.5);
+        beginShape();
+        for (let pt of pts) vertex(pt.x, pt.y);
+        endShape();
+
+        // Pass 2 — mid blend glow
+        stroke(
+            (lg.r * 0.45 + lc.r * 0.55),
+            (lg.g * 0.45 + lc.g * 0.55),
+            (lg.b * 0.45 + lc.b * 0.55),
+            38 * alpha
+        );
+        strokeWeight(1.9);
+        beginShape();
+        for (let pt of pts) vertex(pt.x, pt.y);
+        endShape();
+
+        // Pass 3 — bright core
+        stroke(lc.r, lc.g, lc.b, 102 * alpha);
+        strokeWeight(0.6);
+        beginShape();
+        for (let pt of pts) vertex(pt.x, pt.y);
+        endShape();
+    }
+
+    // ─── Draw a geometric particle with glow halo ─────────────────────────
+    drawParticle(pos, p, shapeAngle, appearScale, alpha) {
+        let s = p.baseSize * params.sizeScale * appearScale;
+        if (s < 0.4) return;
+
+        let col = cc[p.type];
+
+        push();
+        translate(pos.x, pos.y);
+        rotate(shapeAngle);  // fixed per-shape orientation
+
+        // Outer glow halos (always elliptical regardless of shape)
+        noStroke();
+        fill(col.r, col.g, col.b, 7 * alpha);
+        ellipse(0, 0, s * 5.8, s * 5.8);
+        fill(col.r, col.g, col.b, 16 * alpha);
+        ellipse(0, 0, s * 3.3, s * 3.3);
+
+        // Core shape
+        stroke(255, 255, 255, 44 * alpha);
+        strokeWeight(0.65);
+        fill(col.r, col.g, col.b, 160 * alpha);
+
+        if (p.type === 'circle') {
+            ellipse(0, 0, s, s);
+        } else if (p.type === 'triangle') {
+            let r = s * 0.57;
+            triangle(0, -r, -r * 0.866, r * 0.5, r * 0.866, r * 0.5);
+        } else {
+            rectMode(CENTER);
+            rect(0, 0, s * 0.84, s * 0.84, s * 0.13);
+        }
+
+        // Specular highlight — the gleam that makes shapes feel solid
+        noStroke();
+        fill(255, 255, 255, 48 * alpha);
+        ellipse(-s * 0.16, -s * 0.16, s * 0.30, s * 0.30);
+
+        pop();
+    }
+
+    // ─── Main render ──────────────────────────────────────────────────────
+    render() {
+        if (this.drawProgress <= 0 && !this.isActive) return;
+
+        // Smooth edge fade — appears from left, vanishes to right
+        let fadeZone  = params.spread * 2.2;
+        let edgeFade  = 1.0;
+        if (this.baseX < fadeZone) {
+            edgeFade = Math.max(0, Math.min(1,
+                (this.baseX + fadeZone * 0.5) / (fadeZone * 1.5)
+            ));
+            // Ease the fade curve
+            edgeFade = edgeFade * edgeFade * (3 - 2 * edgeFade);
+        }
+        if (this.baseX > width - fadeZone) {
+            let f = Math.max(0, Math.min(1,
+                (width + fadeZone * 0.5 - this.baseX) / (fadeZone * 1.5)
+            ));
+            edgeFade = Math.min(edgeFade, f * f * (3 - 2 * f));
+        }
+
+        let alpha = this.globalAlpha * edgeFade;
+        if (alpha < 0.008) return;
+
+        // Compute absolute particle positions with formation rotation
+        let positions = this.particles.map(p => this.absPos(p));
+
+        // Pop-in scale: shapes grow from 0 → full over first 6% of drawProgress
+        let appearScale = Math.min(1, Math.max(0, this.drawProgress / 0.06));
+
+        // ── Draw connections (behind particles) ──
+        for (let i = 0; i < 3; i++) {
+            let pos1 = positions[i];
+            let pos2 = positions[(i + 1) % 3];
+            let cp   = this.controlPoint(pos1, pos2, this.cpData[i]);
+
+            // Sequential draw: each connection occupies one third of total progress
+            let segStart = i / 3;
+            let segEnd   = (i + 1) / 3;
+            let segProg  = Math.max(0, Math.min(1,
+                (this.drawProgress - segStart) / (segEnd - segStart)
+            ));
+
+            this.drawBezier(pos1, pos2, cp, segProg, alpha);
+        }
+
+        // ── Draw particles (on top of connections) ──
+        for (let i = 0; i < 3; i++) {
+            this.drawParticle(positions[i], this.particles[i], this.shapeAngles[i], appearScale, alpha);
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UI CONTROL HANDLERS
+// ═══════════════════════════════════════════════════════════════
+
+const REINIT_PARAMS = new Set(['triadCount', 'spread']);
+
+function updateParam(name, rawValue, forceReinit) {
+    let val = parseFloat(rawValue);
+    params[name] = val;
+
+    let disp = Number.isInteger(val) ? String(val) : val.toFixed(2);
+    document.getElementById(name + '-value').textContent = disp;
+
+    if (forceReinit || REINIT_PARAMS.has(name)) {
+        initializeSystem();
+    }
+}
+
+// Background colors — rebuild background buffer without touching triads
+function updateBgColor(name, value) {
+    params[name] = value;
+    document.getElementById(name + '-value').textContent = value;
+    refreshColorCache();
+    rebuildBackground();
+}
+
+// Line colors — live update (read from cc each frame)
+function updateLineColor(name, value) {
+    params[name] = value;
+    document.getElementById(name + '-value').textContent = value;
+    refreshColorCache();
+}
+
+// Particle colors — live update
+function updateParticleColor(name, value) {
+    params[name] = value;
+    document.getElementById(name + '-value').textContent = value;
+    refreshColorCache();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SEED CONTROLS
+// ═══════════════════════════════════════════════════════════════
+function updateSeedDisplay() {
+    document.getElementById('seed-input').value = params.seed;
+}
+function updateSeed() {
+    let n = parseInt(document.getElementById('seed-input').value);
+    if (n && n > 0) { params.seed = n; initializeSystem(); }
+    else updateSeedDisplay();
+}
+function previousSeed() { params.seed = Math.max(1, params.seed - 1); updateSeedDisplay(); initializeSystem(); }
+function nextSeed()     { params.seed += 1; updateSeedDisplay(); initializeSystem(); }
+function randomSeedAndUpdate() { params.seed = Math.floor(Math.random() * 999999) + 1; updateSeedDisplay(); initializeSystem(); }
+
+// ═══════════════════════════════════════════════════════════════
+// RESET & DOWNLOAD
+// ═══════════════════════════════════════════════════════════════
+function resetParameters() {
+    params = { ...defaultParams };
+
+    // Sync sliders
+    ['triadCount','spread','curvature','driftSpeed','drawSpeed','breatheSpeed','sizeScale'].forEach(id => {
+        let el = document.getElementById(id);
+        if (!el) return;
+        el.value = params[id];
+        let v = params[id];
+        document.getElementById(id + '-value').textContent =
+            Number.isInteger(v) ? String(v) : v.toFixed(2);
+    });
+
+    // Sync color pickers
+    ['bgTop','bgBottom','lineGlow','lineCore','colorCircle','colorTriangle','colorSquare'].forEach(id => {
+        document.getElementById(id).value = params[id];
+        document.getElementById(id + '-value').textContent = params[id];
+    });
+
+    updateSeedDisplay();
+    initializeSystem();
+}
+
+function downloadArt() {
+    saveCanvas('triadic-resonance-v2-seed-' + params.seed, 'png');
+}
+
+window.addEventListener('load', function() {
+    updateSeedDisplay();
+});
+</script>
+</body>
+</html>
