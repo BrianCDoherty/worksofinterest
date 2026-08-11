@@ -3,17 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Capsule Field 17</title>
+<title>Capsule Patterns</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--dark:#141413;--light:#faf9f5;--gray:#b0aea5;--lgray:#e8e6dc;--orange:#d97757;--blue:#6a9bcc;--green:#788c5d;--purple:#9b7acc}
+:root{--dark:#141413;--light:#faf9f5;--gray:#b0aea5;--lgray:#e8e6dc;--orange:#d97757;--blue:#6a9bcc;--green:#788c5d;--purple:#9b7acc;--accent:#2E4756}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Poppins',sans-serif;background:linear-gradient(135deg,var(--light) 0%,#f5f3ee 100%);min-height:100vh;color:var(--dark)}
+body{font-family:'Poppins',sans-serif;background:#ffffff;min-height:100vh;color:var(--dark)}
 .wrap{display:flex;min-height:100vh;padding:20px;gap:20px;align-items:center}
 .side{width:280px;flex-shrink:0;height:90vh;background:rgba(255,255,255,.97);padding:20px 18px;border-radius:12px;box-shadow:0 10px 30px rgba(20,20,19,.1);overflow-y:auto}
-.side h1{font-family:'Lora',serif;font-size:20px;font-weight:500;margin-bottom:4px}
+.side h1{font-family:'Poppins',sans-serif;font-size:24px;font-weight:200;margin-bottom:4px}
 .side .sub{color:var(--gray);font-size:11px;margin-bottom:18px;line-height:1.5}
 .sec{margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--lgray)}
 .sec:last-child{border-bottom:none;padding-bottom:0}
@@ -21,13 +21,13 @@ body{font-family:'Poppins',sans-serif;background:linear-gradient(135deg,var(--li
 /* Mode buttons */
 .modes{display:grid;grid-template-columns:1fr 1fr;gap:5px}
 .mb{background:var(--light);border:1px solid var(--lgray);border-radius:6px;padding:7px 5px;font-size:10px;font-weight:500;color:#5a5955;cursor:pointer;font-family:'Poppins',sans-serif;text-align:center;transition:all .12s}
-.mb:hover{background:var(--lgray)}.mb.on{background:var(--orange);border-color:var(--orange);color:#fff}
+.mb:hover{background:var(--lgray)}.mb.on{background:#6A9BCC;border-color:#6A9BCC;color:#fff}
 /* D-pad */
 .dpad-wrap{display:flex;gap:14px;align-items:flex-start;margin-bottom:6px}
 .dpad-hint{font-size:9px;color:var(--gray);margin-bottom:8px;line-height:1.4}
 .dpad{display:grid;grid-template-columns:repeat(3,30px);grid-template-rows:repeat(3,30px);gap:3px}
 .db{width:30px;height:30px;background:var(--light);border:1px solid var(--lgray);border-radius:5px;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;color:var(--dark);display:flex;align-items:center;justify-content:center;transition:all .12s}
-.db:hover{background:var(--lgray)}.db.on{background:var(--orange);border-color:var(--orange);color:#fff}
+.db:hover{background:var(--lgray)}.db.on{background:#6A9BCC;border-color:#6A9BCC;color:#fff}
 .db.stop{font-size:9px;font-weight:600}
 .db.rot{font-size:15px;color:#888}.db.rot.on{color:#fff}
 .db.empty{background:transparent;border:none;cursor:default;pointer-events:none}
@@ -35,14 +35,14 @@ body{font-family:'Poppins',sans-serif;background:linear-gradient(135deg,var(--li
 .toggle-row{display:flex;align-items:center;gap:8px;margin-top:6px}
 .toggle-row label{font-size:11px;color:var(--dark);cursor:pointer;user-select:none}
 .toggle-row em{font-size:10px;color:var(--gray);font-style:normal}
-input[type=checkbox]{width:14px;height:14px;accent-color:var(--orange);cursor:pointer}
+input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:pointer}
 /* Sliders */
 .ctrl{margin-bottom:12px}
 .ctrl label{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:500;margin-bottom:5px}
 .ctrl label em{font-style:normal;font-family:'Courier New',monospace;font-size:10px;color:var(--gray)}
 .ctrl input[type=range]{width:100%;height:3px;background:var(--lgray);border-radius:2px;outline:none;-webkit-appearance:none;cursor:pointer}
-.ctrl input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;background:var(--orange);border-radius:50%}
-.ctrl input[type=range]::-moz-range-thumb{width:13px;height:13px;background:var(--orange);border-radius:50%;border:none}
+.ctrl input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;background:#6A9BCC;border-radius:50%}
+.ctrl input[type=range]::-moz-range-thumb{width:13px;height:13px;background:#6A9BCC;border-radius:50%;border:none}
 /* Color rows */
 .cprow{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .cprow label{font-size:11px;color:var(--gray);min-width:58px;flex-shrink:0}
@@ -52,19 +52,20 @@ input[type=checkbox]{width:14px;height:14px;accent-color:var(--orange);cursor:po
 /* BG type */
 .bgbtns{display:flex;gap:4px;margin-bottom:10px}
 .bgt{flex:1;background:var(--light);border:1px solid var(--lgray);border-radius:5px;padding:5px 4px;font-size:10px;font-weight:500;cursor:pointer;font-family:'Poppins',sans-serif;color:#5a5955;text-align:center;transition:all .12s}
-.bgt.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.bgt.on{background:#5C0029;border-color:#5C0029;color:#fff}
 /* Canvas size */
 .srow{display:flex;align-items:center;gap:6px;margin-bottom:8px}
 .srow label{font-size:11px;color:var(--gray);min-width:14px}
 .srow input[type=number]{width:72px;padding:5px 7px;font-size:11px;border:1px solid var(--lgray);border-radius:5px;background:var(--light);color:var(--dark);font-family:'Poppins',sans-serif;outline:none}
-.srow input[type=number]:focus{border-color:var(--orange)}
+.srow input[type=number]:focus{border-color:var(--accent)}
 /* Buttons */
 .btnrow{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:6px}
-.btn{flex:1;border:none;border-radius:6px;padding:9px 8px;font-size:11px;font-weight:500;cursor:pointer;font-family:'Poppins',sans-serif;transition:background .12s;display:flex;align-items:center;justify-content:center}
-.btn.pri{background:var(--orange);color:#fff}.btn.pri:hover{background:#c56843}
-.btn.sec{background:var(--blue);color:#fff}.btn.sec:hover{background:#5a8bb8}
-.btn.ter{background:var(--green);color:#fff}.btn.ter:hover{background:#6b7b52}
-.btn.qua{background:var(--purple);color:#fff}.btn.qua:hover{background:#8a69b8}
+.btn{flex:1;height:35px;overflow:hidden;border:none;border-radius:6px;padding:9px 8px;font-size:11px;line-height:1;font-weight:500;cursor:pointer;font-family:'Poppins',sans-serif;transition:background .12s;display:flex;align-items:center;justify-content:center}
+.btn.pri{background:#26081C;color:#fff}.btn.pri:hover{background:#200718}
+.btn.reset{background:var(--blue);color:#fff}.btn.reset:hover{background:#5a8bb8}
+.btn.ter{background:#8B8E8B;color:#fff}.btn.ter:hover{background:#767976}
+.btn.qua{background:#8B8E8B;color:#fff}.btn.qua:hover{background:#767976}
+.btn.size{background:#5C0029;color:#fff}.btn.size:hover{background:#4E0023}
 .btn.full{width:100%;margin-bottom:5px}
 /* Spin block */
 .spin-block{border:1px solid var(--lgray);border-radius:7px;padding:10px 10px 6px;margin-top:8px;background:var(--light)}
@@ -83,7 +84,7 @@ input[type=checkbox]{width:14px;height:14px;accent-color:var(--orange);cursor:po
 
 <!-- ═══ SIDEBAR ═══ -->
 <div class="side">
-  <h1>Capsule Field 17</h1>
+  <h1>Capsule Patterns</h1>
   <p class="sub">Eight pattern modes · Spin · Multi-axis motion · Export</p>
 
   <!-- PATTERN MODE -->
@@ -255,15 +256,15 @@ input[type=checkbox]{width:14px;height:14px;accent-color:var(--orange);cursor:po
       <label>H</label>
       <input type="number" id="ich" value="900" min="200" max="4000" step="50">
     </div>
-    <button class="btn pri full" onclick="applySize()">Apply Size</button>
+    <button class="btn size full" onclick="applySize()">Apply Size</button>
   </div>
 
   <!-- ACTIONS -->
   <div class="sec">
     <div class="seclabel">Actions</div>
     <div class="btnrow">
-      <button class="btn pri" onclick="doRandomize()">⚄ Wildcard</button>
-      <button class="btn sec" onclick="doReset()">Reset</button>
+      <button class="btn pri" onclick="doRandomize()">Wildcard</button>
+      <button class="btn reset" onclick="doReset()">Reset</button>
     </div>
     <button class="btn ter full" onclick="saveCanvas(cf7cv,'capsule-field-7','png')">↓ Download PNG</button>
     <button class="btn qua full" onclick="doExport()">↓ Download HTML</button>
