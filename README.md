@@ -1,2 +1,2 @@
-# worksofinterest
-things I have done over the years
+# explorations
+things I am tinkering with lately
